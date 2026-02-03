@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../services/api'
-import { Plus, Edit, Trash2, Monitor, Cpu, Search, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Edit, Trash2, Monitor, Cpu, Search, ChevronDown, ChevronUp, Wrench, Calendar } from 'lucide-react'
 import Modal from '../components/Modal'
 import Tooltip from '../components/Tooltip'
 import { useToast } from '../context/ToastContext'
@@ -16,18 +16,18 @@ interface Maquina {
   sistema_operacional: string
   observacoes: string
   total_componentes: number
+  ultima_manutencao?: string
+  proxima_manutencao?: string
+  frequencia_manutencao_meses?: number
 }
 
-interface Componente {
+interface Manutencao {
   id: number
-  maquina_id: number
   tipo: string
+  data_manutencao: string
+  proxima_manutencao: string
   descricao: string
-  marca: string
-  modelo: string
-  numero_serie: string
-  capacidade: string
-  observacoes: string
+  tecnico_nome: string
 }
 
 interface FormData {
@@ -80,10 +80,21 @@ export default function Maquinas() {
   })
 
   const [expandedMaquina, setExpandedMaquina] = useState<number | null>(null)
-  const [componentes, setComponentes] = useState<Componente[]>([])
+  const [componentes, setComponentes] = useState<any[]>([])
   const [loadingComponentes, setLoadingComponentes] = useState(false)
   const [showComponenteModal, setShowComponenteModal] = useState(false)
   const [editingComponenteId, setEditingComponenteId] = useState<number | null>(null)
+  
+  // Novos estados para Manutenção
+  const [manutencoes, setManutencoes] = useState<Manutencao[]>([])
+  const [loadingManutencoes, setLoadingManutencoes] = useState(false)
+  const [showManutencaoModal, setShowManutencaoModal] = useState(false)
+  const [manutencaoForm, setManutencaoForm] = useState({
+    tipo: 'preventiva',
+    data_manutencao: new Date().toISOString().split('T')[0],
+    descricao: '',
+    frequencia_meses: 6
+  })
   const [componenteForm, setComponenteForm] = useState<ComponenteForm>({
     tipo: '',
     descricao: '',
@@ -106,6 +117,69 @@ export default function Maquinas() {
       console.error('Erro ao carregar máquinas:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadManutencoes = async (maquinaId: number) => {
+    setLoadingManutencoes(true)
+    try {
+      const response = await fetch(`/api/maquinas/${maquinaId}/manutencoes`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
+      const data = await response.json()
+      setManutencoes(data)
+    } catch (error) {
+      console.error('Erro ao carregar manutenções:', error)
+    } finally {
+      setLoadingManutencoes(false)
+    }
+  }
+
+  const handleToggleExpand = async (maquinaId: number) => {
+    if (expandedMaquina === maquinaId) {
+      setExpandedMaquina(null)
+      setComponentes([])
+      setManutencoes([])
+    } else {
+      setExpandedMaquina(maquinaId)
+      await Promise.all([
+        loadComponentes(maquinaId),
+        loadManutencoes(maquinaId)
+      ])
+    }
+  }
+
+  const handleOpenManutencaoModal = () => {
+    const maquina = maquinas.find(m => m.id === expandedMaquina)
+    setManutencaoForm({
+      tipo: 'preventiva',
+      data_manutencao: new Date().toISOString().split('T')[0],
+      descricao: '',
+      frequencia_meses: maquina?.frequencia_manutencao_meses || 6
+    })
+    setShowManutencaoModal(true)
+  }
+
+  const handleSubmitManutencao = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!expandedMaquina) return
+    try {
+      const response = await fetch(`/api/maquinas/${expandedMaquina}/manutencoes`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify(manutencaoForm)
+      })
+      if (response.ok) {
+        toast.success('Manutenção registrada com sucesso!')
+        setShowManutencaoModal(false)
+        loadManutencoes(expandedMaquina)
+        loadMaquinas()
+      }
+    } catch (error) {
+      toast.error('Erro ao registrar manutenção')
     }
   }
 
@@ -317,6 +391,20 @@ export default function Maquinas() {
                       {maquina.ip && <span>IP: {maquina.ip}</span>}
                       {maquina.setor_nome && <span>Setor: {maquina.setor_nome}</span>}
                       {maquina.usuario_nome && <span>Usuário: {maquina.usuario_nome}</span>}
+                      {maquina.ultima_manutencao && (
+                        <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
+                          <Wrench className="w-3 h-3" />
+                          Última: {new Date(maquina.ultima_manutencao).toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
+                      {maquina.proxima_manutencao && (
+                        <span className={`flex items-center gap-1 font-medium ${
+                          new Date(maquina.proxima_manutencao) < new Date() ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                        }`}>
+                          <Calendar className="w-3 h-3" />
+                          Próxima: {new Date(maquina.proxima_manutencao).toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
                     </div>
                     {maquina.sistema_operacional && (
                       <span className="text-xs text-gray-400 dark:text-gray-500">{maquina.sistema_operacional}</span>
@@ -360,66 +448,113 @@ export default function Maquinas() {
               
               {expandedMaquina === maquina.id && (
                 <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                      <Cpu className="w-4 h-4" />
-                      Componentes
-                    </h4>
-                    <button
-                      onClick={() => handleOpenComponenteModal()}
-                      className="btn btn-outline btn-sm flex items-center gap-1"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Adicionar
-                    </button>
-                  </div>
-                  
-                  {loadingComponentes ? (
-                    <div className="flex justify-center py-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                    </div>
-                  ) : componentes.length === 0 ? (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">Nenhum componente cadastrado</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {componentes.map((comp) => (
-                        <div key={comp.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 flex items-center justify-between border border-gray-200 dark:border-gray-700">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded">
-                                {comp.tipo}
-                              </span>
-                              <span className="font-medium text-gray-900 dark:text-gray-100">{comp.descricao}</span>
-                            </div>
-                            <div className="flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {comp.marca && <span>Marca: {comp.marca}</span>}
-                              {comp.modelo && <span>Modelo: {comp.modelo}</span>}
-                              {comp.capacidade && <span>Capacidade: {comp.capacidade}</span>}
-                              {comp.numero_serie && <span>S/N: {comp.numero_serie}</span>}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Tooltip text="Editar componente">
-                              <button
-                                onClick={() => handleOpenComponenteModal(comp)}
-                                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                              >
-                                <Edit className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                              </button>
-                            </Tooltip>
-                            <Tooltip text="Excluir componente">
-                              <button
-                                onClick={() => handleDeleteComponente(comp.id)}
-                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                              </button>
-                            </Tooltip>
-                          </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Componentes Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                          <Cpu className="w-4 h-4" />
+                          Componentes
+                        </h4>
+                        <button
+                          onClick={() => handleOpenComponenteModal()}
+                          className="btn btn-outline btn-sm flex items-center gap-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Adicionar
+                        </button>
+                      </div>
+                      
+                      {loadingComponentes ? (
+                        <div className="flex justify-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                         </div>
-                      ))}
+                      ) : componentes.length === 0 ? (
+                        <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">Nenhum componente cadastrado</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {componentes.map((comp) => (
+                            <div key={comp.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 flex items-center justify-between border border-gray-200 dark:border-gray-700">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded">
+                                    {comp.tipo}
+                                  </span>
+                                  <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{comp.descricao}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-x-3 text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                                  {comp.marca && <span>M: {comp.marca}</span>}
+                                  {comp.capacidade && <span>C: {comp.capacidade}</span>}
+                                  {comp.numero_serie && <span>S/N: {comp.numero_serie}</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleOpenComponenteModal(comp)}
+                                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                >
+                                  <Edit className="w-3.5 h-3.5 text-primary-600" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteComponente(comp.id)}
+                                  className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* Manutenções Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                          <Wrench className="w-4 h-4" />
+                          Histórico de Manutenções
+                        </h4>
+                        <button
+                          onClick={handleOpenManutencaoModal}
+                          className="btn btn-primary btn-sm flex items-center gap-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Registrar
+                        </button>
+                      </div>
+
+                      {loadingManutencoes ? (
+                        <div className="flex justify-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                        </div>
+                      ) : manutencoes.length === 0 ? (
+                        <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">Nenhuma manutenção registrada</p>
+                      ) : (
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                          {manutencoes.map((man) => (
+                            <div key={man.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                                  man.tipo === 'preventiva' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                  {man.tipo}
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  {new Date(man.data_manutencao).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2 mb-2">{man.descricao}</p>
+                              <div className="flex justify-between items-center text-[10px] text-gray-500">
+                                <span>Téc: {man.tecnico_nome}</span>
+                                <span className="text-blue-600">Prox: {new Date(man.proxima_manutencao).toLocaleDateString('pt-BR')}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -523,6 +658,82 @@ export default function Maquinas() {
             </button>
             <button type="submit" className="btn btn-primary">
               {editingId ? 'Salvar' : 'Criar'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={showManutencaoModal}
+        onClose={() => setShowManutencaoModal(false)}
+        title="Registrar Manutenção"
+      >
+        <form onSubmit={handleSubmitManutencao} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tipo *
+              </label>
+              <select
+                value={manutencaoForm.tipo}
+                onChange={(e) => setManutencaoForm({ ...manutencaoForm, tipo: e.target.value })}
+                className="input w-full"
+                required
+              >
+                <option value="preventiva">Preventiva</option>
+                <option value="corretiva">Corretiva</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Data da Manutenção *
+              </label>
+              <input
+                type="date"
+                value={manutencaoForm.data_manutencao}
+                onChange={(e) => setManutencaoForm({ ...manutencaoForm, data_manutencao: e.target.value })}
+                className="input w-full"
+                required
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Frequência para Próxima (Meses)
+              </label>
+              <input
+                type="number"
+                value={manutencaoForm.frequencia_meses}
+                onChange={(e) => setManutencaoForm({ ...manutencaoForm, frequencia_meses: parseInt(e.target.value) })}
+                className="input w-full"
+                min="1"
+                max="60"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">O sistema calculará automaticamente a data da próxima manutenção preventiva.</p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Descrição do Serviço *
+            </label>
+            <textarea
+              value={manutencaoForm.descricao}
+              onChange={(e) => setManutencaoForm({ ...manutencaoForm, descricao: e.target.value })}
+              className="input w-full"
+              rows={4}
+              required
+              placeholder="Descreva o que foi feito na manutenção..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowManutencaoModal(false)}
+              className="btn btn-outline"
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Salvar Registro
             </button>
           </div>
         </form>

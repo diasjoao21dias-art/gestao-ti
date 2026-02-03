@@ -677,4 +677,40 @@ router.get('/inventario-ativos-completo', checkModulePermission('relatorios', 'p
   }
 });
 
+router.get('/maquinas-manutencao', checkModulePermission('relatorios', 'pode_visualizar'), async (req, res) => {
+  try {
+    const { data_inicio, data_fim } = req.query;
+    let sql = `
+      SELECT 
+        m.nome as maquina,
+        man.tipo,
+        man.data_manutencao,
+        man.proxima_manutencao,
+        man.descricao,
+        u.nome as tecnico
+      FROM manutencoes_maquina man
+      JOIN maquinas_rede m ON man.maquina_id = m.id
+      LEFT JOIN usuarios u ON man.tecnico_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramCount = 1;
+    if (data_inicio) {
+      sql += ` AND man.data_manutencao >= $${paramCount}`;
+      params.push(data_inicio);
+      paramCount++;
+    }
+    if (data_fim) {
+      sql += ` AND man.data_manutencao <= $${paramCount}`;
+      params.push(data_fim);
+      paramCount++;
+    }
+    sql += ' ORDER BY man.data_manutencao DESC';
+    const result = await query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

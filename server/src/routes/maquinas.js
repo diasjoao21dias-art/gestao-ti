@@ -49,6 +49,51 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/:id/manutencoes', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await query(`
+      SELECT m.*, u.nome as tecnico_nome
+      FROM manutencoes_maquina m
+      LEFT JOIN usuarios u ON m.tecnico_id = u.id
+      WHERE m.maquina_id = $1
+      ORDER BY m.data_manutencao DESC
+    `, [id]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar manutenções' });
+  }
+});
+
+router.post('/:id/manutencoes', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo, data_manutencao, descricao, frequencia_meses } = req.body;
+    
+    const freq = frequencia_meses || 6;
+    const proxima = new Date(data_manutencao);
+    proxima.setMonth(proxima.getMonth() + parseInt(freq));
+
+    const result = await query(`
+      INSERT INTO manutencoes_maquina (maquina_id, tipo, data_manutencao, descricao, tecnico_id, proxima_manutencao)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `, [id, tipo, data_manutencao, descricao, req.user.id, proxima]);
+
+    await query(`
+      UPDATE maquinas_rede 
+      SET ultima_manutencao = $1, 
+          proxima_manutencao = $2,
+          frequencia_manutencao_meses = $3
+      WHERE id = $4
+    `, [data_manutencao, proxima, freq, id]);
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao registrar manutenção' });
+  }
+});
+
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { nome, ip, setor, usuario, sistema_operacional, observacoes } = req.body;

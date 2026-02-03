@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, Filter, Package, MapPin, Truck, Shield, Box, BarChart3 } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, Package, MapPin, Truck, Shield, Box, BarChart3, Wrench } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
@@ -12,6 +12,7 @@ const tiposRelatorio = [
   { value: 'licencas-vencimento', label: 'Licenças Próximas do Vencimento', icon: FileText, group: 'Geral' },
   { value: 'estatisticas', label: 'Estatísticas Gerais', icon: BarChart3, group: 'Geral' },
   { value: 'maquinas', label: 'Máquinas de Rede', icon: Package, group: 'Rede' },
+  { value: 'maquinas-manutencao', label: 'Manutenções de Máquinas', icon: Wrench, group: 'Rede' },
   { value: 'rede-vlans', label: 'VLANs', icon: Package, group: 'Rede' },
   { value: 'rede-subnets', label: 'Subnets', icon: Package, group: 'Rede' },
   { value: 'rede-ips', label: 'Endereços IP', icon: Package, group: 'Rede' },
@@ -60,6 +61,10 @@ export default function Relatorios() {
         params.append('tipo', filtroExtra);
       }
 
+      if (tipoRelatorio === 'maquinas-manutencao' && filtroExtra) {
+        params.append('tipo', filtroExtra);
+      }
+      
       console.log('Gerando relatório:', tipoRelatorio, 'Params:', params.toString());
 
       const response = await fetch(`/api/relatorios/${tipoRelatorio}?${params}`, {
