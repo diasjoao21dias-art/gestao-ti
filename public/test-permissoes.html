@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Permissões - Sistema de Gestão T.I.</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f3f4f6;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e40af; }
+        h2 { color: #3b82f6; margin-top: 30px; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .result {
+            background: #f0f9ff;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .error {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+        .success {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de API de Permissões</h1>
+        <p>Use esta página para testar diretamente a API de permissões do sistema.</p>
+
+        <h2>1. Login</h2>
+        <div>
+            <input type="email" id="email" value="" placeholder="Digite seu email">
+            <input type="password" id="senha" value="" placeholder="Digite sua senha">
+            <button onclick="fazerLogin()">Login</button>
+        </div>
+        <div id="loginResult"></div>
+
+        <h2>2. Buscar Permissões</h2>
+        <div>
+            <input type="number" id="usuarioId" value="2" placeholder="ID do Usuário">
+            <button onclick="buscarPermissoes()">Buscar Permissões</button>
+        </div>
+        <div id="permissoesResult"></div>
+
+        <h2>3. Salvar Permissões</h2>
+        <div>
+            <button onclick="salvarPermissoesExemplo()">Salvar Permissões de Exemplo (Usuário 2)</button>
+        </div>
+        <div id="salvarResult"></div>
+
+        <h2>4. Verificar Permissão Específica</h2>
+        <div>
+            <input type="text" id="modulo" value="ativos" placeholder="Módulo">
+            <input type="text" id="acao" value="pode_visualizar" placeholder="Ação">
+            <button onclick="verificarPermissao()">Verificar</button>
+        </div>
+        <div id="verificarResult"></div>
+    </div>
+
+    <script>
+        let token = '';
+        let usuarioLogado = null;
+
+        async function fazerLogin() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    usuarioLogado = data.usuario;
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ Login bem-sucedido!</strong><br>
+                            Usuário: ${data.usuario.nome}<br>
+                            Email: ${data.usuario.email}<br>
+                            Nível: ${data.usuario.nivel_permissao}<br>
+                            Token salvo! Agora você pode testar as outras funcionalidades.
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Erro no login');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Erro no login:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function buscarPermissoes() {
+            if (!token) {
+                alert('Faça login primeiro!');
+                return;
+            }
+
+            const usuarioId = document.getElementById('usuarioId').value;
+            const resultDiv = document.getElementById('permissoesResult');
+
+            try {
+                const response = await fetch(`/api/permissoes/${usuarioId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ Permissões carregadas com sucesso!</strong>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Erro ao buscar permissões');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Erro:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function salvarPermissoesExemplo() {
+            if (!token) {
+                alert('Faça login primeiro!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('salvarResult');
+            const permissoes = {
+                ativos: { pode_visualizar: true, pode_criar: true, pode_editar: true, pode_excluir: false },
+                tickets: { pode_visualizar: true, pode_criar: true, pode_editar: false, pode_excluir: false },
+                projetos: { pode_visualizar: true, pode_criar: false, pode_editar: false, pode_excluir: false }
+            };
+
+            try {
+                const response = await fetch('/api/permissoes/2', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ permissoes })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ ${data.message}</strong>
+                            <pre>Permissões salvas:\n${JSON.stringify(permissoes, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Erro ao salvar permissões');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Erro:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function verificarPermissao() {
+            if (!token) {
+                alert('Faça login primeiro!');
+                return;
+            }
+
+            const usuarioId = document.getElementById('usuarioId').value;
+            const modulo = document.getElementById('modulo').value;
+            const acao = document.getElementById('acao').value;
+            const resultDiv = document.getElementById('verificarResult');
+
+            try {
+                const response = await fetch('/api/permissoes/verificar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ usuarioId: parseInt(usuarioId), modulo, acao })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result ${data.permitido ? 'success' : 'error'}">
+                            <strong>${data.permitido ? '✅ Permitido' : '❌ Negado'}</strong><br>
+                            Usuário ${usuarioId} ${data.permitido ? 'TEM' : 'NÃO TEM'} permissão para ${acao} em ${modulo}
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Erro ao verificar permissão');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Erro:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Página de teste - faça login manualmente para começar
+    </script>
+</body>
+</html>

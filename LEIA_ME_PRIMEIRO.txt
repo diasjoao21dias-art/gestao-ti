@@ -1,0 +1,95 @@
+════════════════════════════════════════════════════════════════
+  SISTEMA DE GESTÃO DE T.I. - VERSÃO CORRIGIDA PARA WINDOWS
+════════════════════════════════════════════════════════════════
+
+✅ CORREÇÃO APLICADA
+──────────────────────────────────────────────────────────────
+O erro "não existe a coluna setor_id" foi CORRIGIDO nesta versão!
+O banco de dados agora inicializa corretamente em Windows, Mac e Linux.
+
+📋 INSTALAÇÃO RÁPIDA
+──────────────────────────────────────────────────────────────
+
+1️⃣ INSTALAR PRÉ-REQUISITOS
+   • Node.js 18+: https://nodejs.org/
+   • PostgreSQL 12+: https://www.postgresql.org/download/windows/
+
+2️⃣ CRIAR BANCO DE DADOS
+   Abra o SQL Shell (psql) e execute:
+   
+   CREATE DATABASE gestao_ti;
+
+3️⃣ CONFIGURAR .ENV
+   Crie um arquivo .env na raiz com:
+   
+   DATABASE_URL=postgresql://postgres:SUA_SENHA@localhost:5432/gestao_ti
+   PGHOST=localhost
+   PGPORT=5432
+   PGUSER=postgres
+   PGPASSWORD=SUA_SENHA
+   PGDATABASE=gestao_ti
+   PORT=3000
+   NODE_ENV=development
+   JWT_SECRET=sua_chave_secreta_jwt_aqui_123456789
+   FRONTEND_URL=http://localhost:5000
+   BACKEND_URL=http://localhost:3000
+   
+   ⚠️ Substitua SUA_SENHA pela senha do PostgreSQL!
+
+4️⃣ INSTALAR DEPENDÊNCIAS
+   
+   npm install
+   cd client && npm install && cd ..
+
+5️⃣ INICIAR O SISTEMA
+   
+   npm run dev
+
+6️⃣ ACESSAR
+   
+   Navegador: http://localhost:5000
+   Email: admin@itmanager.com
+   Senha: admin123
+   
+   ⚠️ ALTERE A SENHA APÓS O PRIMEIRO LOGIN!
+
+═══════════════════════════════════════════════════════════════
+
+📚 DOCUMENTAÇÃO COMPLETA
+
+Para instruções detalhadas e solução de problemas, consulte:
+
+• INSTALACAO_WINDOWS.md - Guia completo de instalação
+• README.md - Visão geral do sistema
+• MANUAL_INSTALACAO.md - Manual técnico detalhado
+
+═══════════════════════════════════════════════════════════════
+
+🐛 SOLUÇÃO DE PROBLEMAS COMUNS
+
+❌ Erro de conexão com banco de dados
+   → Verifique se o PostgreSQL está rodando (services.msc)
+   → Confirme a senha no arquivo .env
+
+❌ Porta 3000 ou 5000 em uso
+   → Windows PowerShell (Admin):
+   Get-Process -Id (Get-NetTCPConnection -LocalPort 5000).OwningProcess | Stop-Process -Force
+
+❌ Precisa resetar o banco?
+   → Execute: psql -U postgres -f reset_database.sql
+   → Depois: npm run dev
+
+═══════════════════════════════════════════════════════════════
+
+📞 SUPORTE
+
+Em caso de problemas, verifique:
+1. PostgreSQL está rodando?
+2. Arquivo .env está configurado corretamente?
+3. Portas 3000 e 5000 estão disponíveis?
+4. Dependências instaladas? (npm install)
+
+═══════════════════════════════════════════════════════════════
+
+Desenvolvido com ❤️ para facilitar a gestão de TI
+Versão Corrigida - Outubro 2025

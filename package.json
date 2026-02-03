@@ -1,0 +1,33 @@
+{
+  "name": "sistema-gestao-ti",
+  "version": "1.0.0",
+  "description": "Sistema completo de gestão de T.I.",
+  "main": "server/src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx concurrently \"npm run server\" \"npm run client\"",
+    "server": "node server/src/index.js",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build"
+  },
+  "keywords": [
+    "IT",
+    "management",
+    "gestao"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.3",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1",
+    "xlsx": "^0.18.5"
+  }
+}

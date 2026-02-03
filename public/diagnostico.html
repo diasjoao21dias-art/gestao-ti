@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Diagnóstico - Sistema Gestão T.I.</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #2563eb; }
+        .test-section { background: #f3f4f6; padding: 15px; margin: 15px 0; border-radius: 8px; }
+        button { background: #2563eb; color: white; border: none; padding: 10px 20px; 
+                margin: 5px; cursor: pointer; border-radius: 5px; font-size: 14px; }
+        button:hover { background: #1d4ed8; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        input { padding: 8px; margin: 5px; width: 250px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico do Sistema</h1>
+    
+    <div class="test-section">
+        <h3>1. Teste de Conectividade</h3>
+        <button onclick="testarBackend()">Testar Backend</button>
+        <div id="backend-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Teste de Login</h3>
+        <input type="email" id="email" placeholder="Email" value="admin@itmanager.com">
+        <input type="password" id="senha" placeholder="Senha" value="admin123">
+        <button onclick="testarLogin()">FAZER LOGIN</button>
+        <div id="login-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Teste do Dashboard</h3>
+        <button onclick="testarDashboard()">Carregar Dashboard</button>
+        <div id="dashboard-result"></div>
+    </div>
+
+    <script>
+        async function testarBackend() {
+            const div = document.getElementById('backend-result');
+            div.innerHTML = '⏳ Testando conexão...';
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    div.className = 'result success';
+                    div.innerHTML = '✅ Backend funcionando!<br>Status: ' + data.status + '<br>Mensagem: ' + data.message;
+                } else {
+                    div.className = 'result error';
+                    div.innerHTML = '❌ Backend com problemas: ' + response.status;
+                }
+            } catch (error) {
+                div.className = 'result error';
+                div.innerHTML = '❌ Erro de conexão: ' + error.message;
+            }
+        }
+
+        async function testarLogin() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const div = document.getElementById('login-result');
+            
+            div.innerHTML = '⏳ Fazendo login...';
+            div.className = '';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    div.className = 'result success';
+                    div.innerHTML = '✅ LOGIN FUNCIONOU!<br>' +
+                        'Usuário: ' + data.user.nome + '<br>' +
+                        'Email: ' + data.user.email + '<br>' +
+                        'Nível: ' + data.user.nivel_permissao + '<br>' +
+                        'Token: ' + data.token.substring(0, 30) + '...';
+                    
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                } else {
+                    div.className = 'result error';
+                    div.innerHTML = '❌ ERRO NO LOGIN:<br>' + (data.error || 'Falha desconhecida');
+                }
+            } catch (error) {
+                div.className = 'result error';
+                div.innerHTML = '❌ ERRO DE CONEXÃO:<br>' + error.message + 
+                    '<br><br>Verifique se o backend está rodando na porta 3000';
+            }
+        }
+
+        async function testarDashboard() {
+            const div = document.getElementById('dashboard-result');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                div.className = 'result error';
+                div.innerHTML = '❌ Faça login primeiro!';
+                return;
+            }
+            
+            div.innerHTML = '⏳ Carregando dados...';
+            
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    div.className = 'result success';
+                    div.innerHTML = '✅ DASHBOARD FUNCIONANDO!<br>' +
+                        'Total Ativos: ' + data.resumo.totalAtivos + '<br>' +
+                        'Total Tickets: ' + data.resumo.totalTickets + '<br>' +
+                        'Total Projetos: ' + data.resumo.totalProjetos + '<br>' +
+                        'Total Licenças: ' + data.resumo.totalLicencas;
+                } else {
+                    div.className = 'result error';
+                    div.innerHTML = '❌ ERRO: ' + response.status;
+                }
+            } catch (error) {
+                div.className = 'result error';
+                div.innerHTML = '❌ ERRO: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

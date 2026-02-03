@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Login</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <h2>Teste de Login - Sistema Gestão T.I.</h2>
+    
+    <input type="email" id="email" placeholder="Email" value="admin@itmanager.com">
+    <input type="password" id="password" placeholder="Senha" value="admin123">
+    <button onclick="testarLogin()">TESTAR LOGIN</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testarLogin() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = 'Testando login...';
+            resultDiv.className = '';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, senha }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = '✅ LOGIN FUNCIONOU!<br>' +
+                        'Usuário: ' + data.user.nome + '<br>' +
+                        'Token recebido: ' + data.token.substring(0, 20) + '...';
+                    
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = '❌ ERRO: ' + (data.error || 'Falha no login');
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = '❌ ERRO DE CONEXÃO: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

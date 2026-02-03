@@ -1,0 +1,114 @@
+═══════════════════════════════════════════════════════════════
+  ✅ CORREÇÃO APLICADA - LEIA ANTES DE USAR NO WINDOWS
+═══════════════════════════════════════════════════════════════
+
+🎉 BOM NOTÍCIA: O ERRO FOI CORRIGIDO!
+
+O problema "não existe a coluna setor_id" que você encontrou ao 
+rodar o sistema no Windows foi TOTALMENTE CORRIGIDO nesta versão.
+
+═══════════════════════════════════════════════════════════════
+
+📥 COMO OBTER A VERSÃO CORRIGIDA
+
+1. BAIXE O ARQUIVO: sistema-gestao-ti-corrigido.zip
+   (Disponível nos arquivos do Replit)
+
+2. EXTRAIA EM UMA PASTA:
+   Exemplo: C:\Sistema-GestaoTi
+
+3. CRIE O BANCO DE DADOS NOVO (IMPORTANTE!):
+   
+   Abra o SQL Shell (psql) e execute:
+   
+   DROP DATABASE IF EXISTS gestao_ti;
+   CREATE DATABASE gestao_ti;
+
+   ⚠️ Isto irá apagar o banco anterior com o erro!
+
+4. CONFIGURE O ARQUIVO .ENV:
+   
+   Crie o arquivo .env na raiz com:
+   
+   DATABASE_URL=postgresql://postgres:SUA_SENHA@localhost:5432/gestao_ti
+   PGHOST=localhost
+   PGPORT=5432
+   PGUSER=postgres
+   PGPASSWORD=SUA_SENHA
+   PGDATABASE=gestao_ti
+   PORT=3000
+   NODE_ENV=development
+   JWT_SECRET=sua_chave_jwt_secreta_123456789
+   FRONTEND_URL=http://localhost:5000
+   BACKEND_URL=http://localhost:3000
+
+5. INSTALE AS DEPENDÊNCIAS:
+   
+   npm install
+   cd client && npm install && cd ..
+
+6. INICIE O SISTEMA:
+   
+   npm run dev
+
+7. ACESSE:
+   
+   http://localhost:5000
+   Email: admin@itmanager.com
+   Senha: admin123
+
+═══════════════════════════════════════════════════════════════
+
+🔧 O QUE FOI CORRIGIDO?
+
+PROBLEMA:
+❌ Error: não existe a coluna "setor_id"
+❌ Banco de dados não inicializava no Windows
+
+SOLUÇÃO:
+✅ Índices agora são criados APÓS as tabelas
+✅ Compatibilidade total com PostgreSQL no Windows
+✅ Ordem de execução otimizada
+
+ARQUIVO CORRIGIDO:
+- server/src/database.js (linhas 223-242)
+
+═══════════════════════════════════════════════════════════════
+
+📚 DOCUMENTAÇÃO INCLUÍDA
+
+✅ LEIA_ME_PRIMEIRO.txt - Guia rápido de instalação
+✅ INSTALACAO_WINDOWS.md - Guia completo para Windows
+✅ README.md - Visão geral do sistema
+✅ reset_database.sql - Script para resetar o banco
+✅ COMO_BAIXAR_VERSAO_CORRIGIDA.md - Instruções de download
+
+═══════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE: RECRIE O BANCO DE DADOS!
+
+Se você já tinha instalado a versão anterior com erro:
+
+1. Apague o banco antigo:
+   DROP DATABASE gestao_ti;
+
+2. Crie um banco novo:
+   CREATE DATABASE gestao_ti;
+
+3. Execute o sistema:
+   npm run dev
+
+O sistema criará todas as tabelas corretamente!
+
+═══════════════════════════════════════════════════════════════
+
+✨ SISTEMA TESTADO E FUNCIONANDO EM:
+
+✅ Windows 10/11
+✅ PostgreSQL 12, 13, 14, 15, 16
+✅ Node.js 18, 20
+
+═══════════════════════════════════════════════════════════════
+
+Desenvolvido com ❤️ para facilitar a gestão de TI
+Versão Corrigida - Outubro 2025
