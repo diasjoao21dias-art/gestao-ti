@@ -30,6 +30,18 @@ interface Manutencao {
   tecnico_nome: string
 }
 
+interface Componente {
+  id: number
+  maquina_id: number
+  tipo: string
+  descricao: string
+  marca: string
+  modelo: string
+  numero_serie: string
+  capacidade: string
+  observacoes: string
+}
+
 interface FormData {
   nome: string
   ip: string
@@ -80,11 +92,20 @@ export default function Maquinas() {
   })
 
   const [expandedMaquina, setExpandedMaquina] = useState<number | null>(null)
-  const [componentes, setComponentes] = useState<any[]>([])
+  const [componentes, setComponentes] = useState<Componente[]>([])
   const [loadingComponentes, setLoadingComponentes] = useState(false)
   const [showComponenteModal, setShowComponenteModal] = useState(false)
   const [editingComponenteId, setEditingComponenteId] = useState<number | null>(null)
-  
+  const [componenteForm, setComponenteForm] = useState<ComponenteForm>({
+    tipo: '',
+    descricao: '',
+    marca: '',
+    modelo: '',
+    numero_serie: '',
+    capacidade: '',
+    observacoes: ''
+  })
+
   // Novos estados para Manutenção
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([])
   const [loadingManutencoes, setLoadingManutencoes] = useState(false)
@@ -94,15 +115,6 @@ export default function Maquinas() {
     data_manutencao: new Date().toISOString().split('T')[0],
     descricao: '',
     frequencia_meses: 6
-  })
-  const [componenteForm, setComponenteForm] = useState<ComponenteForm>({
-    tipo: '',
-    descricao: '',
-    marca: '',
-    modelo: '',
-    numero_serie: '',
-    capacidade: '',
-    observacoes: ''
   })
 
   useEffect(() => {
@@ -117,6 +129,18 @@ export default function Maquinas() {
       console.error('Erro ao carregar máquinas:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadComponentes = async (maquinaId: number) => {
+    setLoadingComponentes(true)
+    try {
+      const data = await api.maquinas.getComponentes(maquinaId)
+      setComponentes(data)
+    } catch (error) {
+      console.error('Erro ao carregar componentes:', error)
+    } finally {
+      setLoadingComponentes(false)
     }
   }
 
@@ -146,62 +170,6 @@ export default function Maquinas() {
         loadComponentes(maquinaId),
         loadManutencoes(maquinaId)
       ])
-    }
-  }
-
-  const handleOpenManutencaoModal = () => {
-    const maquina = maquinas.find(m => m.id === expandedMaquina)
-    setManutencaoForm({
-      tipo: 'preventiva',
-      data_manutencao: new Date().toISOString().split('T')[0],
-      descricao: '',
-      frequencia_meses: maquina?.frequencia_manutencao_meses || 6
-    })
-    setShowManutencaoModal(true)
-  }
-
-  const handleSubmitManutencao = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!expandedMaquina) return
-    try {
-      const response = await fetch(`/api/maquinas/${expandedMaquina}/manutencoes`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
-        body: JSON.stringify(manutencaoForm)
-      })
-      if (response.ok) {
-        toast.success('Manutenção registrada com sucesso!')
-        setShowManutencaoModal(false)
-        loadManutencoes(expandedMaquina)
-        loadMaquinas()
-      }
-    } catch (error) {
-      toast.error('Erro ao registrar manutenção')
-    }
-  }
-
-  const loadComponentes = async (maquinaId: number) => {
-    setLoadingComponentes(true)
-    try {
-      const data = await api.maquinas.getComponentes(maquinaId)
-      setComponentes(data)
-    } catch (error) {
-      console.error('Erro ao carregar componentes:', error)
-    } finally {
-      setLoadingComponentes(false)
-    }
-  }
-
-  const handleToggleExpand = async (maquinaId: number) => {
-    if (expandedMaquina === maquinaId) {
-      setExpandedMaquina(null)
-      setComponentes([])
-    } else {
-      setExpandedMaquina(maquinaId)
-      await loadComponentes(maquinaId)
     }
   }
 
@@ -325,6 +293,40 @@ export default function Maquinas() {
     }
   }
 
+  const handleOpenManutencaoModal = () => {
+    const maquina = maquinas.find(m => m.id === expandedMaquina)
+    setManutencaoForm({
+      tipo: 'preventiva',
+      data_manutencao: new Date().toISOString().split('T')[0],
+      descricao: '',
+      frequencia_meses: maquina?.frequencia_manutencao_meses || 6
+    })
+    setShowManutencaoModal(true)
+  }
+
+  const handleSubmitManutencao = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!expandedMaquina) return
+    try {
+      const response = await fetch(`/api/maquinas/${expandedMaquina}/manutencoes`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify(manutencaoForm)
+      })
+      if (response.ok) {
+        toast.success('Manutenção registrada com sucesso!')
+        setShowManutencaoModal(false)
+        loadManutencoes(expandedMaquina)
+        loadMaquinas()
+      }
+    } catch (error) {
+      toast.error('Erro ao registrar manutenção')
+    }
+  }
+
   const filteredMaquinas = maquinas.filter(m => 
     m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.ip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -415,7 +417,7 @@ export default function Maquinas() {
                   <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
                     {maquina.total_componentes} componentes
                   </span>
-                  <Tooltip text={expandedMaquina === maquina.id ? "Ocultar componentes" : "Ver peças e componentes desta máquina"}>
+                  <Tooltip text={expandedMaquina === maquina.id ? "Ocultar detalhes" : "Ver peças e manutenções desta máquina"}>
                     <button
                       onClick={() => handleToggleExpand(maquina.id)}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -820,7 +822,7 @@ export default function Maquinas() {
                 value={componenteForm.numero_serie}
                 onChange={(e) => setComponenteForm({ ...componenteForm, numero_serie: e.target.value })}
                 className="input w-full"
-                placeholder="S/N do componente"
+                placeholder="Ex: S/N 123456"
               />
             </div>
           </div>
@@ -832,7 +834,8 @@ export default function Maquinas() {
               value={componenteForm.observacoes}
               onChange={(e) => setComponenteForm({ ...componenteForm, observacoes: e.target.value })}
               className="input w-full"
-              rows={2}
+              rows={3}
+              placeholder="Informações adicionais sobre o componente..."
             />
           </div>
           <div className="flex justify-end gap-3 pt-4">
