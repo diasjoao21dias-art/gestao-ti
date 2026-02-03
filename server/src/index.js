@@ -101,12 +101,21 @@ io.on('connection', (socket) => {
 const startServer = async () => {
   try {
     await initDatabase();
+    console.log('✅ Banco de dados conectado');
+    
     httpServer.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
       console.log(`🔌 WebSocket ativo`);
     });
   } catch (error) {
-    console.error('Erro ao iniciar servidor:', error);
+    if (error.message && error.message.includes('client password must be a string')) {
+      console.error('\n❌ ERRO DE CONFIGURAÇÃO:');
+      console.error('A variável DATABASE_URL não foi encontrada ou está vazia.');
+      console.error('No Windows, certifique-se de que o arquivo .env existe e contém a DATABASE_URL.');
+      console.error('Exemplo no .env: DATABASE_URL=postgres://usuario:senha@localhost:5432/nome_do_banco\n');
+    } else {
+      console.error('❌ Erro ao iniciar servidor:', error);
+    }
     process.exit(1);
   }
 };

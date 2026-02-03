@@ -1,9 +1,17 @@
 import pg from 'pg';
 const { Pool } = pg;
 
-const pool = new Pool({
+const poolConfig = {
   connectionString: process.env.DATABASE_URL
-});
+};
+
+// No Windows, se o DATABASE_URL não estiver definido, o Pool pode tentar
+// uma autenticação vazia que causa erro de SASL SCRAM.
+if (!process.env.DATABASE_URL) {
+  console.warn('⚠️ DATABASE_URL não encontrada nas variáveis de ambiente.');
+}
+
+const pool = new Pool(poolConfig);
 
 export const query = (text, params) => pool.query(text, params);
 
