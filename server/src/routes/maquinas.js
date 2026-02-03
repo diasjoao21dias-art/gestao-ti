@@ -254,4 +254,47 @@ router.delete('/componentes/:id', authMiddleware, async (req, res) => {
   }
 });
 
+router.put('/manutencoes/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo, data_manutencao, descricao, frequencia_meses } = req.body;
+    
+    const freq = frequencia_meses || 6;
+    const proxima = new Date(data_manutencao);
+    proxima.setMonth(proxima.getMonth() + parseInt(freq));
+
+    const result = await query(`
+      UPDATE manutencoes_maquina 
+      SET tipo = $1, data_manutencao = $2, descricao = $3, proxima_manutencao = $4, atualizado_em = CURRENT_TIMESTAMP
+      WHERE id = $5
+      RETURNING *
+    `, [tipo, data_manutencao, descricao, proxima, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Manutenção não encontrada' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao atualizar manutenção:', error);
+    res.status(500).json({ error: 'Erro ao atualizar manutenção' });
+  }
+});
+
+router.delete('/manutencoes/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await query('DELETE FROM manutencoes_maquina WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Manutenção não encontrada' });
+    }
+    
+    res.json({ message: 'Manutenção excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir manutenção:', error);
+    res.status(500).json({ error: 'Erro ao excluir manutenção' });
+  }
+});
+
 export default router;

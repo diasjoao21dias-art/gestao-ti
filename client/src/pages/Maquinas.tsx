@@ -110,6 +110,7 @@ export default function Maquinas() {
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([])
   const [loadingManutencoes, setLoadingManutencoes] = useState(false)
   const [showManutencaoModal, setShowManutencaoModal] = useState(false)
+  const [editingManutencaoId, setEditingManutencaoId] = useState<number | null>(null)
   const [manutencaoForm, setManutencaoForm] = useState({
     tipo: 'preventiva',
     data_manutencao: new Date().toISOString().split('T')[0],
@@ -294,14 +295,25 @@ export default function Maquinas() {
     }
   }
 
-  const handleOpenManutencaoModal = () => {
+  const handleOpenManutencaoModal = (manutencao?: Manutencao) => {
     const maquina = maquinas.find(m => m.id === expandedMaquina)
-    setManutencaoForm({
-      tipo: 'preventiva',
-      data_manutencao: new Date().toISOString().split('T')[0],
-      descricao: '',
-      frequencia_meses: maquina?.frequencia_manutencao_meses || 6
-    })
+    if (manutencao) {
+      setEditingManutencaoId(manutencao.id)
+      setManutencaoForm({
+        tipo: manutencao.tipo,
+        data_manutencao: new Date(manutencao.data_manutencao).toISOString().split('T')[0],
+        descricao: manutencao.descricao,
+        frequencia_meses: maquina?.frequencia_manutencao_meses || 6
+      })
+    } else {
+      setEditingManutencaoId(null)
+      setManutencaoForm({
+        tipo: 'preventiva',
+        data_manutencao: new Date().toISOString().split('T')[0],
+        descricao: '',
+        frequencia_meses: maquina?.frequencia_manutencao_meses || 6
+      })
+    }
     setShowManutencaoModal(true)
   }
 
@@ -309,8 +321,12 @@ export default function Maquinas() {
     e.preventDefault()
     if (!expandedMaquina) return
     try {
-      const response = await fetch(`${(import.meta as any).env?.VITE_API_URL || '/api'}/maquinas/${expandedMaquina}/manutencoes`, {
-        method: 'POST',
+      const url = editingManutencaoId 
+        ? `${(import.meta as any).env?.VITE_API_URL || '/api'}/maquinas/manutencoes/${editingManutencaoId}`
+        : `${(import.meta as any).env?.VITE_API_URL || '/api'}/maquinas/${expandedMaquina}/manutencoes`
+      
+      const response = await fetch(url, {
+        method: editingManutencaoId ? 'PUT' : 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}` 
@@ -318,17 +334,36 @@ export default function Maquinas() {
         body: JSON.stringify(manutencaoForm)
       })
       if (response.ok) {
-        toast.success('Manutenção registrada com sucesso!')
+        toast.success(editingManutencaoId ? 'Manutenção atualizada!' : 'Manutenção registrada!')
         setShowManutencaoModal(false)
-        loadManutencoes(expandedMaquina)
-        loadMaquinas()
+        await loadManutencoes(expandedMaquina)
+        await loadMaquinas()
       } else {
         const errorData = await response.json()
-        toast.error(errorData.message || 'Erro ao registrar manutenção')
+        toast.error(errorData.error || 'Erro ao salvar manutenção')
       }
     } catch (error) {
-      console.error('Erro ao registrar manutenção:', error)
-      toast.error('Erro ao registrar manutenção')
+      console.error('Erro ao salvar manutenção:', error)
+      toast.error('Erro ao salvar manutenção')
+    }
+  }
+
+  const handleDeleteManutencao = async (id: number) => {
+    if (!confirm('Deseja excluir esta manutenção?')) return
+    try {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_URL || '/api'}/maquinas/manutencoes/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
+      if (response.ok) {
+        toast.success('Manutenção excluída!')
+        if (expandedMaquina) {
+          loadManutencoes(expandedMaquina)
+          loadMaquinas()
+        }
+      }
+    } catch (error) {
+      toast.error('Erro ao excluir manutenção')
     }
   }
 
@@ -540,16 +575,26 @@ export default function Maquinas() {
                       ) : (
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                           {manutencoes.map((man) => (
-                            <div key={man.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                            <div key={man.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 relative group">
                               <div className="flex justify-between items-start mb-1">
                                 <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
                                   man.tipo === 'preventiva' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                 }`}>
                                   {man.tipo}
                                 </span>
-                                <span className="text-[10px] text-gray-400">
-                                  {new Date(man.data_manutencao).toLocaleDateString('pt-BR')}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-gray-400">
+                                    {new Date(man.data_manutencao).toLocaleDateString('pt-BR')}
+                                  </span>
+                                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleOpenManutencaoModal(man)} className="p-1 hover:text-primary-600">
+                                      <Edit className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={() => handleDeleteManutencao(man.id)} className="p-1 hover:text-red-600">
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                               <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2 mb-2">{man.descricao}</p>
                               <div className="flex justify-between items-center text-[10px] text-gray-500">
@@ -673,7 +718,7 @@ export default function Maquinas() {
       <Modal
         isOpen={showManutencaoModal}
         onClose={() => setShowManutencaoModal(false)}
-        title="Registrar Manutenção"
+        title={editingManutencaoId ? 'Editar Manutenção' : 'Registrar Manutenção'}
       >
         <form onSubmit={handleSubmitManutencao} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
