@@ -93,7 +93,7 @@ router.post('/:id/manutencoes', authMiddleware, async (req, res) => {
 
     // Emitir evento para atualizar o frontend em tempo real
     if (req.io) {
-      req.io.emit('maquina_atualizada', { id });
+      req.io.emit('maquina_atualizada', { id: result.rows[0].maquina_id });
     }
     
     res.status(201).json(result.rows[0]);
@@ -279,6 +279,11 @@ router.put('/manutencoes/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Manutenção não encontrada' });
     }
     
+    // Emitir evento para atualizar o frontend em tempo real
+    if (req.io) {
+      req.io.emit('maquina_atualizada', { id: result.rows[0].maquina_id });
+    }
+    
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Erro ao atualizar manutenção:', error);
@@ -293,6 +298,11 @@ router.delete('/manutencoes/:id', authMiddleware, async (req, res) => {
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Manutenção não encontrada' });
+    }
+    
+    // Emitir evento para atualizar o frontend em tempo real
+    if (req.io) {
+      req.io.emit('maquina_atualizada', { id: result.rows[0].maquina_id });
     }
     
     res.json({ message: 'Manutenção excluída com sucesso' });
