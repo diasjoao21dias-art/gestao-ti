@@ -1,8 +1,14 @@
 import pg from 'pg';
 const { Pool } = pg;
 
-const poolConfig = {
+const poolConfig = process.env.DATABASE_URL ? {
   connectionString: process.env.DATABASE_URL
+} : {
+  user: process.env.PGUSER || 'postgres',
+  host: process.env.PGHOST || 'localhost',
+  database: process.env.PGDATABASE || 'itmanager',
+  password: process.env.PGPASSWORD || '',
+  port: process.env.PGPORT || 5432,
 };
 
 // No Windows, se o DATABASE_URL não estiver definido, o Pool pode tentar
