@@ -151,9 +151,10 @@ export default function Maquinas() {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       })
       const data = await response.json()
-      setManutencoes(data)
+      setManutencoes(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Erro ao carregar manutenções:', error)
+      setManutencoes([])
     } finally {
       setLoadingManutencoes(false)
     }
