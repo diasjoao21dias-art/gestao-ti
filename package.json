@@ -5,7 +5,7 @@
   "main": "server/src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "npx concurrently \"npm run server\" \"npm run client\"",
+    "dev": "node node_modules/concurrently/dist/bin/concurrently.js \"npm run server\" \"npm run client\"",
     "server": "node server/src/index.js",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build"

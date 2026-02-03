@@ -6,12 +6,14 @@ This is a comprehensive IT Management System (Sistema de Gestão de T.I.) built 
 
 Preferred communication style: Simple, everyday language.
 
-# Recent Changes (December 2025)
+# Recent Changes (February 2026)
 
-- Project imported from Tesew-Flow zip file
-- PostgreSQL database configured and initialized with sample data
+- Project imported from GitHub and configured for Replit environment
+- PostgreSQL database created via Replit's built-in database tool (using environment variables: DATABASE_URL, PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE)
 - All dependencies installed (frontend and backend)
-- Workflow configured to run frontend (port 5000) and backend (port 3000) simultaneously
+- Workflow configured to run frontend (port 5000) and backend (port 3000) simultaneously using concurrently
+- Vite configured with allowedHosts: true for Replit proxy compatibility
+- Deployment configured for autoscale with build step
 - **Automatic project progress calculation**: Progress now calculated automatically based on task completion (completed tasks / total tasks * 100). Status updates automatically: 0% = "planejamento", 1-99% = "em_andamento", 100% = "concluído"
 - **Knowledge Base view modal**: Clicking on article cards now opens a view modal showing full content, metadata (views, likes, author), and tags. Edit button available in the modal
 - **Delete options verified**: All modules (Ativos, Conhecimento, Projetos, Licencas, Usuarios, Tickets, Inventario, Rede, Setores) have full edit and delete capabilities for admin users
