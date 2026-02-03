@@ -1,0 +1,57 @@
+[1] > node node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5000
+[1]
+[0] ⚠️ DATABASE_URL não encontrada nas variáveis de ambiente.
+[0] [dotenv@17.2.3] injecting env (11) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[0] ❌ Erro ao inicializar banco de dados: error: autentica��o do tipo senha falhou para o usu�rio "postgres"
+[0]     at C:\Users\admin\dev\bso\BKP-Sistema-GestaoTi\teste\node_modules\pg-pool\index.js:45:11
+[0]     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[0]     at async initDatabase (file:///C:/Users/admin/dev/bso/BKP-Sistema-GestaoTi/teste/server/src/database.js:26:5)
+[0]     at async startServer (file:///C:/Users/admin/dev/bso/BKP-Sistema-GestaoTi/teste/server/src/index.js:103:5) {
+[0]   length: 113,
+[0]   severity: 'FATAL',
+[0]   code: '28P01',
+[0]   detail: undefined,
+[0]   hint: undefined,
+[0]   position: undefined,
+[0]   internalPosition: undefined,
+[0]   internalQuery: undefined,
+[0]   where: undefined,
+[0]   schema: undefined,
+[0]   table: undefined,
+[0]   column: undefined,
+[0]   dataType: undefined,
+[0]   constraint: undefined,
+[0]   file: 'auth.c',
+[0]   line: '320',
+[0]   routine: 'auth_failed'
+[0] }
+[0] ❌ Erro ao iniciar servidor: error: autentica��o do tipo senha falhou para o usu�rio "postgres"
+[0]     at C:\Users\admin\dev\bso\BKP-Sistema-GestaoTi\teste\node_modules\pg-pool\index.js:45:11
+[0]     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+[0]     at async initDatabase (file:///C:/Users/admin/dev/bso/BKP-Sistema-GestaoTi/teste/server/src/database.js:26:5)
+[0]     at async startServer (file:///C:/Users/admin/dev/bso/BKP-Sistema-GestaoTi/teste/server/src/index.js:103:5) {
+[0]   length: 113,
+[0]   severity: 'FATAL',
+[0]   code: '28P01',
+[0]   detail: undefined,
+[0]   hint: undefined,
+[0]   position: undefined,
+[0]   internalPosition: undefined,
+[0]   internalQuery: undefined,
+[0]   where: undefined,
+[0]   schema: undefined,
+[0]   table: undefined,
+[0]   column: undefined,
+[0]   dataType: undefined,
+[0]   constraint: undefined,
+[0]   file: 'auth.c',
+[0]   line: '320',
+[0]   routine: 'auth_failed'
+[0] }
+[0] npm run server exited with code 1
+[1]
+[1]   VITE v5.4.21  ready in 694 ms
+[1]
+[1]   ➜  Local:   http://localhost:5000/
+[1]   ➜  Network: http://192.168.0.117:5000/
+[1] 12:14:33 [vite] http proxy error: /api/auth/verificar
