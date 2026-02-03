@@ -3,7 +3,14 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDatabase } from './database.js';
+
+// Garantir que o dotenv carregue o arquivo .env da raiz do projeto
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import authRoutes from './routes/auth.js';
 import usuariosRoutes from './routes/usuarios.js';
 import ativosRoutes from './routes/ativos.js';
