@@ -572,7 +572,7 @@ export default function Maquinas() {
                           Histórico de Manutenções
                         </h4>
                         <button
-                          onClick={handleOpenManutencaoModal}
+                          onClick={() => handleOpenManutencaoModal()}
                           className="btn btn-primary btn-sm flex items-center gap-1"
                         >
                           <Plus className="w-4 h-4" />
