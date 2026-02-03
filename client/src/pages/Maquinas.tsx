@@ -297,14 +297,28 @@ export default function Maquinas() {
 
   const handleOpenManutencaoModal = (manutencao?: Manutencao) => {
     const maquina = maquinas.find(m => m.id === expandedMaquina)
-    if (manutencao) {
+    if (manutencao && manutencao.data_manutencao) {
       setEditingManutencaoId(manutencao.id)
-      setManutencaoForm({
-        tipo: manutencao.tipo,
-        data_manutencao: new Date(manutencao.data_manutencao).toISOString().split('T')[0],
-        descricao: manutencao.descricao,
-        frequencia_meses: maquina?.frequencia_manutencao_meses || 6
-      })
+      try {
+        const date = new Date(manutencao.data_manutencao)
+        const dateString = isNaN(date.getTime()) 
+          ? new Date().toISOString().split('T')[0]
+          : date.toISOString().split('T')[0]
+          
+        setManutencaoForm({
+          tipo: manutencao.tipo,
+          data_manutencao: dateString,
+          descricao: manutencao.descricao,
+          frequencia_meses: maquina?.frequencia_manutencao_meses || 6
+        })
+      } catch (e) {
+        setManutencaoForm({
+          tipo: manutencao.tipo,
+          data_manutencao: new Date().toISOString().split('T')[0],
+          descricao: manutencao.descricao,
+          frequencia_meses: maquina?.frequencia_manutencao_meses || 6
+        })
+      }
     } else {
       setEditingManutencaoId(null)
       setManutencaoForm({
