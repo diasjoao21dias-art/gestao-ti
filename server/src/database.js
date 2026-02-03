@@ -484,6 +484,18 @@ export const initDatabase = async () => {
         atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS manutencoes_maquina (
+        id SERIAL PRIMARY KEY,
+        maquina_id INTEGER REFERENCES maquinas_rede(id) ON DELETE CASCADE,
+        tipo VARCHAR(100) NOT NULL,
+        data_manutencao TIMESTAMP NOT NULL,
+        descricao TEXT,
+        tecnico_id INTEGER REFERENCES usuarios(id),
+        proxima_manutencao TIMESTAMP,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS licenca_sistema (
         id SERIAL PRIMARY KEY,
         chave_licenca VARCHAR(500) NOT NULL UNIQUE,
@@ -536,6 +548,9 @@ export const initDatabase = async () => {
       const columns = [
         { name: 'setor_texto', type: 'VARCHAR(255)' },
         { name: 'usuario_texto', type: 'VARCHAR(255)' },
+        { name: 'ultima_manutencao', type: 'TIMESTAMP' },
+        { name: 'proxima_manutencao', type: 'TIMESTAMP' },
+        { name: 'frequencia_manutencao_meses', type: 'INTEGER DEFAULT 6' },
       ];
 
       for (const col of columns) {
