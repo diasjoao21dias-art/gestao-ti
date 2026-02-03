@@ -11,6 +11,9 @@ channel = "stable-25_05"
 NODE_ENV = "development"
 JWT_SECRET = "deca54be8c65556197a83b000811c47665124e815a9f4936d20bf915ecc7a46f"
 BACKEND_PORT = "3000"
+FRONTEND_URL = "http://localhost:5000"
+BACKEND_URL = "http://localhost:3000"
+PORT = "3000"
 
 [workflows]
 runButton = "Project"
