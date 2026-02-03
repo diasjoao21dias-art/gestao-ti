@@ -309,7 +309,7 @@ export default function Maquinas() {
     e.preventDefault()
     if (!expandedMaquina) return
     try {
-      const response = await fetch(`/api/maquinas/${expandedMaquina}/manutencoes`, {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_URL || '/api'}/maquinas/${expandedMaquina}/manutencoes`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -322,8 +322,12 @@ export default function Maquinas() {
         setShowManutencaoModal(false)
         loadManutencoes(expandedMaquina)
         loadMaquinas()
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || 'Erro ao registrar manutenção')
       }
     } catch (error) {
+      console.error('Erro ao registrar manutenção:', error)
       toast.error('Erro ao registrar manutenção')
     }
   }
