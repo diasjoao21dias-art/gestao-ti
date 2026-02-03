@@ -90,6 +90,11 @@ router.post('/:id/manutencoes', authMiddleware, async (req, res) => {
           frequencia_manutencao_meses = $3
       WHERE id = $4
     `, [data_manutencao, proxima, freq, id]);
+
+    // Emitir evento para atualizar o frontend em tempo real
+    if (req.io) {
+      req.io.emit('maquina_atualizada', { id });
+    }
     
     res.status(201).json(result.rows[0]);
   } catch (error) {

@@ -54,6 +54,7 @@ app.use(express.static('public'));
 export { io };
 
 app.use((req, res, next) => {
+  req.io = io;
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   next();
 });
