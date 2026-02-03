@@ -70,6 +70,9 @@ router.post('/:id/manutencoes', authMiddleware, async (req, res) => {
     const { id } = req.params;
     const { tipo, data_manutencao, descricao, frequencia_meses } = req.body;
     
+    console.log('Registrando manutenção:', { id, tipo, data_manutencao, descricao, frequencia_meses });
+    console.log('Usuário autenticado:', req.user);
+
     const freq = frequencia_meses || 6;
     const proxima = new Date(data_manutencao);
     proxima.setMonth(proxima.getMonth() + parseInt(freq));
@@ -78,7 +81,7 @@ router.post('/:id/manutencoes', authMiddleware, async (req, res) => {
       INSERT INTO manutencoes_maquina (maquina_id, tipo, data_manutencao, descricao, tecnico_id, proxima_manutencao)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [id, tipo, data_manutencao, descricao, req.user.id, proxima]);
+    `, [id, tipo, data_manutencao, descricao, req.user?.id || 1, proxima]);
 
     await query(`
       UPDATE maquinas_rede 
@@ -90,7 +93,8 @@ router.post('/:id/manutencoes', authMiddleware, async (req, res) => {
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao registrar manutenção' });
+    console.error('Erro detalhado ao registrar manutenção:', error);
+    res.status(500).json({ error: 'Erro ao registrar manutenção', details: error.message });
   }
 });
 
