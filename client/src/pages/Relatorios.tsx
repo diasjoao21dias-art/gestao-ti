@@ -159,15 +159,46 @@ export default function Relatorios() {
           if (typeof value === 'number' && (col.toLowerCase().includes('valor') || col.toLowerCase().includes('total'))) {
             return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
           }
-          if ((col.toLowerCase().includes('data') || col.toLowerCase().includes('criado_em')) && value) {
-            const parsedDate = Date.parse(value);
-            if (!isNaN(parsedDate)) {
-              // Verifica se é uma string ISO com T00:00:00.000Z e remove a parte do tempo para evitar problemas de fuso horário
+          
+          // Melhor detecção de colunas de data
+          const isDateColumn = col.toLowerCase().includes('data') || 
+                              col.toLowerCase().includes('criado_em') || 
+                              col.toLowerCase().includes('proxima_manutencao') ||
+                              col.toLowerCase().includes('vencimento') ||
+                              col.toLowerCase().includes('expiracao') ||
+                              col.toLowerCase().includes('aquisicao') ||
+                              col.toLowerCase().includes('garantia');
+
+          if (isDateColumn && value && value !== '-') {
+            try {
+              // Limpa a string da data para evitar problemas de fuso horário
+              // Se vier no formato ISO (2026-08-16T00:00:00.000Z), pegamos apenas a parte da data
               const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
+              
+              // Divide a string por hífen ou barra para pegar os componentes numéricos
+              const parts = dateStr.split(/[-/]/);
+              if (parts.length === 3) {
+                let y, m, d;
+                if (parts[0].length === 4) { // YYYY-MM-DD
+                  [y, m, d] = parts.map(Number);
+                } else { // DD-MM-YYYY
+                  [d, m, y] = parts.map(Number);
+                }
+                
+                const day = String(d).padStart(2, '0');
+                const month = String(m).padStart(2, '0');
+                return `${day}/${month}/${y}`;
+              }
+              
               const dateObj = new Date(dateStr);
-              // Adiciona um dia se for apenas data (sem hora) para compensar o fuso horário se necessário, 
-              // ou usa UTC para garantir consistência
-              return new Date(dateObj.getTime() + dateObj.getTimezoneOffset() * 60000).toLocaleDateString('pt-BR');
+              if (!isNaN(dateObj.getTime())) {
+                const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                const year = dateObj.getUTCFullYear();
+                return `${day}/${month}/${year}`;
+              }
+            } catch (e) {
+              console.error('Erro ao formatar data no PDF:', e);
             }
           }
           return String(value);
@@ -202,16 +233,24 @@ export default function Relatorios() {
         columnStyles: colunas.reduce((acc: any, col: string, index: number) => {
           if (col.toLowerCase().includes('id') && col.length < 5) {
             acc[index] = { cellWidth: 10, halign: 'center' };
-          } else if (col.toLowerCase().includes('valor') || col.toLowerCase().includes('total')) {
-            acc[index] = { cellWidth: 22, halign: 'right' };
-          } else if (col.toLowerCase().includes('data') || col.toLowerCase().includes('criado_em')) {
-            acc[index] = { cellWidth: 22, halign: 'center' };
-          } else if (col.toLowerCase().includes('status') || col.toLowerCase().includes('prioridade') || col.toLowerCase().includes('tipo')) {
-            acc[index] = { cellWidth: 20, halign: 'center' };
-          } else if (col.toLowerCase().includes('quantidade')) {
-            acc[index] = { cellWidth: 18, halign: 'center' };
           } else {
-            acc[index] = { cellWidth: 'auto', halign: 'left' };
+            const isDateColumn = col.toLowerCase().includes('data') || 
+                                col.toLowerCase().includes('criado_em') ||
+                                col.toLowerCase().includes('proxima_manutencao') ||
+                                col.toLowerCase().includes('vencimento') ||
+                                col.toLowerCase().includes('expiracao') ||
+                                col.toLowerCase().includes('aquisicao') ||
+                                col.toLowerCase().includes('garantia');
+            
+            if (isDateColumn) {
+              acc[index] = { cellWidth: 22, halign: 'center' };
+            } else if (col.toLowerCase().includes('status') || col.toLowerCase().includes('prioridade') || col.toLowerCase().includes('tipo')) {
+              acc[index] = { cellWidth: 20, halign: 'center' };
+            } else if (col.toLowerCase().includes('quantidade')) {
+              acc[index] = { cellWidth: 18, halign: 'center' };
+            } else {
+              acc[index] = { cellWidth: 'auto', halign: 'left' };
+            }
           }
           return acc;
         }, {}),
@@ -367,15 +406,44 @@ export default function Relatorios() {
               cell.alignment = { horizontal: 'center', vertical: 'middle' };
               if (!numericColumns.includes(colIndex)) numericColumns.push(colIndex);
             }
-          } else if ((col.toLowerCase().includes('data') || col.toLowerCase().includes('criado_em') || col.toLowerCase().includes('atualizado_em')) && value) {
-            const parsedDate = Date.parse(value);
-            if (!isNaN(parsedDate)) {
+          const isDateColumn = col.toLowerCase().includes('data') || 
+                              col.toLowerCase().includes('criado_em') || 
+                              col.toLowerCase().includes('atualizado_em') ||
+                              col.toLowerCase().includes('proxima_manutencao') ||
+                              col.toLowerCase().includes('vencimento') ||
+                              col.toLowerCase().includes('expiracao') ||
+                              col.toLowerCase().includes('aquisicao') ||
+                              col.toLowerCase().includes('garantia');
+
+          if (isDateColumn && value && value !== '-') {
+            try {
               const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
-              const dateObj = new Date(dateStr);
-              cell.value = new Date(dateObj.getTime() + dateObj.getTimezoneOffset() * 60000);
-              cell.numFmt = 'DD/MM/YYYY';
-              cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            } else {
+              
+              const parts = dateStr.split(/[-/]/);
+              if (parts.length === 3) {
+                let y, m, d;
+                if (parts[0].length === 4) { // YYYY-MM-DD
+                  [y, m, d] = parts.map(Number);
+                } else { // DD-MM-YYYY
+                  [d, m, y] = parts.map(Number);
+                }
+                
+                // No ExcelJS para o objeto Date, o mês é 0-indexado
+                cell.value = new Date(y, m - 1, d);
+                cell.numFmt = 'DD/MM/YYYY';
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+              } else {
+                const dateObj = new Date(dateStr);
+                if (!isNaN(dateObj.getTime())) {
+                  cell.value = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+                  cell.numFmt = 'DD/MM/YYYY';
+                  cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                } else {
+                  cell.value = String(value);
+                  cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                }
+              }
+            } catch (e) {
               cell.value = String(value);
               cell.alignment = { horizontal: 'left', vertical: 'middle' };
             }
