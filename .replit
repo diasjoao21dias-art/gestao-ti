@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
 
@@ -9,10 +9,10 @@ channel = "stable-25_05"
 
 [userenv.shared]
 NODE_ENV = "development"
-JWT_SECRET = "deca54be8c65556197a83b000811c47665124e815a9f4936d20bf915ecc7a46f"
+JWT_SECRET = "replit-jwt-secret-key-2026"
 BACKEND_PORT = "3000"
-FRONTEND_URL = "http://localhost:5000"
-BACKEND_URL = "http://localhost:3000"
+FRONTEND_URL = "https://1c0a8bcf-baa9-42fc-bebc-378f54729b43-00-1r8axrbhzd8xh.kirk.replit.dev"
+BACKEND_URL = "https://1c0a8bcf-baa9-42fc-bebc-378f54729b43-00-1r8axrbhzd8xh.kirk.replit.dev"
 PORT = "3000"
 
 [workflows]
@@ -49,5 +49,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "node_modules/concurrently/dist/bin/concurrently.js", "npm run server", "npx vite preview --host 0.0.0.0 --port 5000"]
-build = ["npm", "run", "build"]
+run = ["bash", "-c", "node server/src/index.js & cd client && npx vite preview --host 0.0.0.0 --port 5000"]
+build = ["bash", "-c", "cd client && npm run build"]
