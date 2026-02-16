@@ -162,7 +162,12 @@ export default function Relatorios() {
           if ((col.toLowerCase().includes('data') || col.toLowerCase().includes('criado_em')) && value) {
             const parsedDate = Date.parse(value);
             if (!isNaN(parsedDate)) {
-              return new Date(value).toLocaleDateString('pt-BR');
+              // Verifica se é uma string ISO com T00:00:00.000Z e remove a parte do tempo para evitar problemas de fuso horário
+              const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
+              const dateObj = new Date(dateStr);
+              // Adiciona um dia se for apenas data (sem hora) para compensar o fuso horário se necessário, 
+              // ou usa UTC para garantir consistência
+              return new Date(dateObj.getTime() + dateObj.getTimezoneOffset() * 60000).toLocaleDateString('pt-BR');
             }
           }
           return String(value);
@@ -365,7 +370,9 @@ export default function Relatorios() {
           } else if ((col.toLowerCase().includes('data') || col.toLowerCase().includes('criado_em') || col.toLowerCase().includes('atualizado_em')) && value) {
             const parsedDate = Date.parse(value);
             if (!isNaN(parsedDate)) {
-              cell.value = new Date(value);
+              const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
+              const dateObj = new Date(dateStr);
+              cell.value = new Date(dateObj.getTime() + dateObj.getTimezoneOffset() * 60000);
               cell.numFmt = 'DD/MM/YYYY';
               cell.alignment = { horizontal: 'center', vertical: 'middle' };
             } else {
