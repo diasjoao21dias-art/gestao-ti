@@ -172,30 +172,18 @@ export default function Relatorios() {
           if (isDateColumn && value && value !== '-') {
             try {
               // Limpa a string da data para evitar problemas de fuso horário
-              // Se vier no formato ISO (2026-08-16T00:00:00.000Z), pegamos apenas a parte da data
-              const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
+              const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : String(value);
               
-              // Divide a string por hífen ou barra para pegar os componentes numéricos
               const parts = dateStr.split(/[-/]/);
               if (parts.length === 3) {
                 let y, m, d;
                 if (parts[0].length === 4) { // YYYY-MM-DD
-                  [y, m, d] = parts.map(Number);
+                  y = parts[0]; m = parts[1]; d = parts[2];
                 } else { // DD-MM-YYYY
-                  [d, m, y] = parts.map(Number);
+                  d = parts[0]; m = parts[1]; y = parts[2];
                 }
                 
-                const day = String(d).padStart(2, '0');
-                const month = String(m).padStart(2, '0');
-                return `${day}/${month}/${y}`;
-              }
-              
-              const dateObj = new Date(dateStr);
-              if (!isNaN(dateObj.getTime())) {
-                const day = String(dateObj.getUTCDate()).padStart(2, '0');
-                const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-                const year = dateObj.getUTCFullYear();
-                return `${day}/${month}/${year}`;
+                return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
               }
             } catch (e) {
               console.error('Erro ao formatar data no PDF:', e);
@@ -234,15 +222,15 @@ export default function Relatorios() {
           if (col.toLowerCase().includes('id') && col.length < 5) {
             acc[index] = { cellWidth: 10, halign: 'center' };
           } else {
-            const isDateColumn = col.toLowerCase().includes('data') || 
-                                col.toLowerCase().includes('criado_em') ||
-                                col.toLowerCase().includes('proxima_manutencao') ||
-                                col.toLowerCase().includes('vencimento') ||
-                                col.toLowerCase().includes('expiracao') ||
-                                col.toLowerCase().includes('aquisicao') ||
-                                col.toLowerCase().includes('garantia');
+            const isDateCol = col.toLowerCase().includes('data') || 
+                             col.toLowerCase().includes('criado_em') ||
+                             col.toLowerCase().includes('proxima_manutencao') ||
+                             col.toLowerCase().includes('vencimento') ||
+                             col.toLowerCase().includes('expiracao') ||
+                             col.toLowerCase().includes('aquisicao') ||
+                             col.toLowerCase().includes('garantia');
             
-            if (isDateColumn) {
+            if (isDateCol) {
               acc[index] = { cellWidth: 22, halign: 'center' };
             } else if (col.toLowerCase().includes('status') || col.toLowerCase().includes('prioridade') || col.toLowerCase().includes('tipo')) {
               acc[index] = { cellWidth: 20, halign: 'center' };
@@ -417,31 +405,20 @@ export default function Relatorios() {
 
           if (isDateColumn && value && value !== '-') {
             try {
-              const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : value;
+              const dateStr = typeof value === 'string' && value.includes('T') ? value.split('T')[0] : String(value);
               
               const parts = dateStr.split(/[-/]/);
               if (parts.length === 3) {
                 let y, m, d;
                 if (parts[0].length === 4) { // YYYY-MM-DD
-                  [y, m, d] = parts.map(Number);
+                  y = Number(parts[0]); m = Number(parts[1]); d = Number(parts[2]);
                 } else { // DD-MM-YYYY
-                  [d, m, y] = parts.map(Number);
+                  d = Number(parts[0]); m = Number(parts[1]); y = Number(parts[2]);
                 }
                 
-                // No ExcelJS para o objeto Date, o mês é 0-indexado
                 cell.value = new Date(y, m - 1, d);
                 cell.numFmt = 'DD/MM/YYYY';
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
-              } else {
-                const dateObj = new Date(dateStr);
-                if (!isNaN(dateObj.getTime())) {
-                  cell.value = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
-                  cell.numFmt = 'DD/MM/YYYY';
-                  cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                } else {
-                  cell.value = String(value);
-                  cell.alignment = { horizontal: 'left', vertical: 'middle' };
-                }
               }
             } catch (e) {
               cell.value = String(value);
