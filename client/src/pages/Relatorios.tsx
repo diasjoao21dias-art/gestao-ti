@@ -36,6 +36,17 @@ export default function Relatorios() {
   const [erro, setErro] = useState('');
   const [gerado, setGerado] = useState(false);
 
+  const formatarData = (data: any) => {
+    if (!data || data === '-') return '-';
+    try {
+      const d = new Date(data);
+      if (isNaN(d.getTime())) return String(data);
+      return d.toLocaleDateString('pt-BR');
+    } catch (e) {
+      return String(data);
+    }
+  };
+
   const gerarRelatorio = async () => {
     setLoading(true);
     setErro('');
@@ -394,6 +405,8 @@ export default function Relatorios() {
               cell.alignment = { horizontal: 'center', vertical: 'middle' };
               if (!numericColumns.includes(colIndex)) numericColumns.push(colIndex);
             }
+          }
+
           const isDateColumn = col.toLowerCase().includes('data') || 
                               col.toLowerCase().includes('criado_em') || 
                               col.toLowerCase().includes('atualizado_em') ||
@@ -793,11 +806,15 @@ export default function Relatorios() {
                           value ? 'Sim' : 'Não'
                         ) : typeof value === 'number' && (key.toLowerCase().includes('valor') || key.toLowerCase().includes('total')) ? (
                           `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        ) : (key.toLowerCase().includes('data') || key.toLowerCase().includes('criado_em')) && value ? (
-                          (() => {
-                            const parsedDate = Date.parse(value);
-                            return !isNaN(parsedDate) ? new Date(value).toLocaleDateString('pt-BR') : String(value);
-                          })()
+                        ) : (key.toLowerCase().includes('data') || 
+                              key.toLowerCase().includes('criado_em') || 
+                              key.toLowerCase().includes('atualizado_em') ||
+                              key.toLowerCase().includes('proxima_manutencao') ||
+                              key.toLowerCase().includes('vencimento') ||
+                              key.toLowerCase().includes('expiracao') ||
+                              key.toLowerCase().includes('aquisicao') ||
+                              key.toLowerCase().includes('garantia')) && value ? (
+                          formatarData(value)
                         ) : key.toLowerCase().includes('status') || key.toLowerCase().includes('situacao') ? (
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             String(value).toLowerCase().includes('vencid') || String(value).toLowerCase().includes('abaixo') 
